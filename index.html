@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sukanya Samriddhi Yojana (SSY) Calculator</title>
+    <!-- 1. Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'brand-primary': '#1e40af', // blue-800
+              'brand-secondary': '#3b82f6', // blue-500
+              'brand-accent': '#ec4899', // pink-500
+              'brand-light': '#f0f9ff', // blue-50
+              'brand-dark': '#1e3a8a', // blue-900
+            },
+          },
+        },
+      }
+    </script>
+    <!-- 2. Load required libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/recharts@2/umd/Recharts.min.js"></script>
+    <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.js"></script>
+    <!-- 3. Load Babel to translate JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "recharts": "https://aistudiocdn.com/recharts@^3.2.0",
+    "jspdf": "https://aistudiocdn.com/jspdf@^3.0.2",
+    "jspdf-autotable": "https://aistudiocdn.com/jspdf-autotable@^5.0.2"
+  }
+}
+</script>
+</head>
+<body class="bg-brand-light">
+    <!-- The React app will be rendered here -->
+    <div id="root"></div>
+
+    <!-- 4. The combined application code -->
+    <script type="text/babel">
+      // --- Constants (from constants.ts) ---
+      const INTEREST_RATE = 0.082; // 8.2% per annum
+      const MIN_INVESTMENT = 250;
+      const MAX_INVESTMENT = 150000;
+      const DEPOSIT_PERIOD_YEARS = 15;
+      const MATURITY_PERIOD_YEARS = 21;
+      const MIN_GIRL_AGE = 0;
+      const MAX_GIRL_AGE = 10;
+
+      // --- Helper Function ---
+      const formatCurrency = (value) => {
+        if (value === 0) return '₹0';
+        return new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(value);
+      };
+
+      // --- ResultsDisplay Component (from components/ResultsDisplay.tsx) ---
+      const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = window.Recharts;
+      const { jsPDF } = window.jspdf;
+
+      const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+          const data = payload[0].payload;
+          return (
+            <div className="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+              <p className="font-bold text-gray-800">{`Age: ${label}`}</p>
+              <ul className="mt-2 space-y-1 text-sm">
+                <li className="flex justify-between items-center"><span className="text-gray-600">Yearly Deposit:</span><span className="font-medium text-blue-600 ml-4">{formatCurrency(data.investment)}</span></li>
+                <li className="flex justify-between items-center"><span className="text-gray-600">Interest Earned:</span><span className="font-medium text-green-600 ml-4">{formatCurrency(data.interest)}</span></li>
+                <li className="flex justify-between items-center"><span className="text-gray-600">Closing Balance:</span><span className="font-medium text-pink-600 ml-4">{formatCurrency(data.closingBalance)}</span></li>
+              </ul>
+            </div>
+          );
+        }
+        return null;
+      };
+
+      const GrowthChart = ({ data }) => (
+        <div className="w-full h-80 bg-white p-4 rounded-xl shadow-md border border-gray-200">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
+              <XAxis dataKey="age" label={{ value: "Girl's Age", position: 'insideBottom', offset: -5 }} />
+              <YAxis tickFormatter={(value) => `${formatCurrency(value)}`} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend />
+              <Line type="monotone" dataKey="totalInvestment" name="Total Investment" stroke="#3b82f6" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="closingBalance" name="Maturity Value" stroke="#ec4899" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      );
+      
+      const ResultsTaxBenefitInfo = () => (
+        <div className="bg-teal-50 border border-teal-200 text-teal-800 p-4 rounded-lg shadow-sm flex items-start space-x-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 flex-shrink-0 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+          <div><h3 className="font-bold text-lg">Reminder: Your SSY Investment is Tax-Free!</h3><p className="text-sm">The SSY scheme has an <strong>Exempt-Exempt-Exempt (EEE)</strong> status, meaning the contribution, interest, and maturity amount are all tax-free.</p></div>
+        </div>
+      );
+
+      const ResultsDisplay = ({ results }) => {
+        const handleDownloadPDF = React.useCallback(() => {
+          if (!results) return;
+          const { yearlyData, totalInvestment, totalInterest, maturityValue, totalWithdrawal } = results;
+          const doc = new jsPDF();
+
+          // Title & Summary
+          doc.setFontSize(20); doc.text("Sukanya Samriddhi Yojana (SSY) Summary", 14, 22);
+          doc.setFontSize(11);
+          let startY = 32;
+          doc.text(`Total Investment: ${formatCurrency(totalInvestment)}`, 14, startY);
+          doc.text(`Total Interest Earned: ${formatCurrency(totalInterest)}`, 14, startY + 8);
+          if (totalWithdrawal > 0) { startY += 8; doc.text(`Amount Withdrawn: ${formatCurrency(totalWithdrawal)}`, 14, startY + 8); }
+          startY += 16;
+          doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.text(`Final Maturity Value: ${formatCurrency(maturityValue)}`, 14, startY); doc.setFont('helvetica', 'normal');
+
+          // Table
+          const tableHead = [['Year', 'Age', 'Monthly', 'Yearly', 'Withdrawal', 'Interest', 'Balance']];
+          const tableBody = yearlyData.map(row => [row.year, row.age, formatCurrency(row.monthlyInvestment), formatCurrency(row.investment), formatCurrency(row.withdrawal), formatCurrency(row.interest), formatCurrency(row.closingBalance)]);
+
+          jsPDF.autoTable(doc, {
+            startY: startY + 10, head: tableHead, body: tableBody, headStyles: { fillColor: [30, 64, 175] }, styles: { fontSize: 8 },
+            columnStyles: { 0: { halign: 'center', cellWidth: 15 }, 1: { halign: 'center', cellWidth: 15 }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right' } },
+            didDrawPage: (data) => {
+              const { width, height } = doc.internal.pageSize;
+              doc.saveGraphicsState(); doc.setFontSize(60); doc.setTextColor("#d3d3d3");
+              try { doc.setGState(new (doc).GState({ opacity: 0.2 })); doc.text("Postalguide", width / 2, height / 2, { align: "center", angle: -45 }); } catch (e) { console.error(e); }
+              doc.restoreGraphicsState();
+            },
+          });
+          doc.save('SSY_Summary.pdf');
+        }, [results]);
+
+        if (!results) {
+          return (<div className="flex flex-col items-center justify-center bg-white p-8 rounded-2xl shadow-lg border border-gray-200 h-full"><img src="https://storage.googleapis.com/aistudio-hosting/ssy-placeholder.svg" alt="Illustration" className="w-64 h-auto mb-6"/><h2 className="text-2xl font-bold text-brand-primary">Plan Your Investment</h2><p className="text-gray-600 mt-2 text-center">Enter your details to see a projection of your savings.</p></div>);
+        }
+        const { yearlyData, totalInvestment, totalInterest, maturityValue, totalWithdrawal } = results;
+        const hasWithdrawal = totalWithdrawal > 0;
+        return (<div className="space-y-8"><div className={`grid grid-cols-1 md:grid-cols-2 ${hasWithdrawal ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6`}><div className="bg-blue-100 p-6 rounded-2xl text-center shadow-md"><h3 className="text-lg font-semibold text-blue-800">Total Investment</h3><p className="text-3xl font-bold text-blue-900">{formatCurrency(totalInvestment)}</p></div><div className="bg-pink-100 p-6 rounded-2xl text-center shadow-md"><h3 className="text-lg font-semibold text-pink-800">Total Interest</h3><p className="text-3xl font-bold text-pink-900">{formatCurrency(totalInterest)}</p></div>{hasWithdrawal && (<div className="bg-orange-100 p-6 rounded-2xl text-center shadow-md"><h3 className="text-lg font-semibold text-orange-800">Amount Withdrawn</h3><p className="text-3xl font-bold text-orange-900">{formatCurrency(totalWithdrawal)}</p></div>)}<div className={`bg-green-100 p-6 rounded-2xl text-center shadow-md ${hasWithdrawal ? 'md:col-span-2 lg:col-span-1' : ''}`}><h3 className="text-lg font-semibold text-green-800">Maturity Value</h3><p className="text-3xl font-bold text-green-900">{formatCurrency(maturityValue)}</p></div></div><GrowthChart data={yearlyData} /><ResultsTaxBenefitInfo /><div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200"><div className="flex justify-between items-center mb-4"><h3 className="text-xl font-bold text-brand-primary">Year-by-Year Breakdown</h3><button onClick={handleDownloadPDF} className="bg-brand-secondary text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 flex items-center space-x-2"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg><span>Download PDF</span></button></div><div className="overflow-x-auto max-h-96"><table className="w-full text-sm text-left"><thead className="text-xs uppercase bg-gray-100 sticky top-0"><tr><th className="px-4 py-3">Year</th><th className="px-4 py-3">Age</th><th className="px-4 py-3">Monthly</th><th className="px-4 py-3">Yearly</th><th className="px-4 py-3">Withdrawal</th><th className="px-4 py-3">Interest</th><th className="px-4 py-3">Balance</th></tr></thead><tbody>{yearlyData.map((row) => (<tr key={row.year} className={`border-b hover:bg-gray-50 ${row.withdrawal > 0 ? 'bg-orange-50' : ''}`}><td className="px-4 py-3 font-medium">{row.year}</td><td className="px-4 py-3">{row.age}</td><td className="px-4 py-3">{formatCurrency(row.monthlyInvestment)}</td><td className="px-4 py-3">{formatCurrency(row.investment)}</td><td className={`px-4 py-3 font-semibold ${row.withdrawal > 0 ? 'text-orange-700' : ''}`}>{formatCurrency(row.withdrawal)}</td><td className="px-4 py-3">{formatCurrency(row.interest)}</td><td className="px-4 py-3 font-semibold text-gray-900">{formatCurrency(row.closingBalance)}</td></tr>))}</tbody></table></div></div></div>);
+      };
+
+      // --- CalculatorForm Component (from components/CalculatorForm.tsx) ---
+      const CalculatorForm = ({ monthlyInvestment, onMonthlyInvestmentChange, girlAge, onAgeChange, onCalculate, investmentError, ageError, isWithdrawalEnabled, onIsWithdrawalEnabledChange, withdrawalAge, onWithdrawalAgeChange, withdrawalAmount, onWithdrawalAmountChange, withdrawalAgeError, withdrawalAmountError, }) => {
+        const isInvalid = !!investmentError || !!ageError || (isWithdrawalEnabled && (!!withdrawalAgeError || !!withdrawalAmountError || withdrawalAmount <= 0));
+        const monthlyMax = MAX_INVESTMENT / 12;
+        const RupeeIcon = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M15 8.25H9m6 3H9m3 6.75h3.75c.621 0 1.125-.504 1.125-1.125V4.125c0-.621-.504-1.125-1.125-1.125H7.875c-.621 0-1.125.504-1.125 1.125v14.25c0 .621.504 1.125 1.125 1.125h8.25c.621 0 1.125-.504 1.125-1.125v-1.5a1.125 1.125 0 0 0-1.125-1.125H9.75" /></svg>);
+        const UserIcon = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>);
+        const CalendarIcon = ({className}) => (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0h18M-4.5 12h22.5" /></svg>);
+        return (<div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 sticky top-8"><h2 className="text-2xl font-bold text-brand-primary mb-6">Investment Details</h2><div className="space-y-6"><div><label htmlFor="monthlyInvestment" className="block text-sm font-medium text-gray-700 mb-2">Monthly Investment (₹)</label><div className="relative"><div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><RupeeIcon className="h-5 w-5 text-gray-400" /></div><input type="number" id="monthlyInvestment" name="monthlyInvestment" className={`w-full pl-10 pr-4 py-2 border rounded-md shadow-sm transition-colors ${investmentError ? 'border-red-500' : 'border-gray-300'}`} value={monthlyInvestment} onChange={(e) => onMonthlyInvestmentChange(Number(e.target.value))} min="0" max={monthlyMax} step="100"/></div>{investmentError && <p className="mt-2 text-sm text-red-600">{investmentError}</p>}<input type="range" className="w-full mt-3" min="0" max={monthlyMax} step="100" value={monthlyInvestment} onChange={(e) => onMonthlyInvestmentChange(Number(e.target.value))}/><div className="flex justify-between text-xs text-gray-500 mt-1"><span>₹0</span><span>₹{monthlyMax.toLocaleString('en-IN')}</span></div></div><div><label htmlFor="girlAge" className="block text-sm font-medium text-gray-700 mb-2">Girl's Age</label><div className="relative"><div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><UserIcon className="h-5 w-5 text-gray-400" /></div><input type="number" id="girlAge" name="girlAge" className={`w-full pl-10 pr-4 py-2 border rounded-md shadow-sm ${ageError ? 'border-red-500' : 'border-gray-300'}`} value={girlAge} onChange={(e) => onAgeChange(Number(e.target.value))} min={MIN_GIRL_AGE} max={MAX_GIRL_AGE}/></div>{ageError && <p className="mt-2 text-sm text-red-600">{ageError}</p>}</div><div className="border-t pt-6 space-y-4"><div className="relative flex items-start"><div className="flex h-6 items-center"><input id="withdrawal-enabled" type="checkbox" className="h-4 w-4 rounded border-gray-300 text-brand-secondary" checked={isWithdrawalEnabled} onChange={(e) => onIsWithdrawalEnabledChange(e.target.checked)}/></div><div className="ml-3 text-sm"><label htmlFor="withdrawal-enabled" className="font-medium">Apply for Partial Withdrawal</label><p className="text-gray-500">Simulate a withdrawal after age 18.</p></div></div>{isWithdrawalEnabled && (<div className="space-y-4 rounded-lg bg-blue-50 p-4 border border-blue-200"><div><label htmlFor="withdrawalAge" className="block text-sm font-medium">Withdrawal Age</label><input type="number" id="withdrawalAge" className={`w-full mt-1 p-2 border rounded-md ${withdrawalAgeError ? 'border-red-500' : 'border-gray-300'}`} value={withdrawalAge} onChange={(e) => onWithdrawalAgeChange(Number(e.target.value))} min="18" max={MATURITY_PERIOD_YEARS - 1}/>{withdrawalAgeError && <p className="mt-2 text-sm text-red-600">{withdrawalAgeError}</p>}</div><div><label htmlFor="withdrawalAmount" className="block text-sm font-medium">Withdrawal Amount (₹)</label><input type="number" id="withdrawalAmount" className={`w-full mt-1 p-2 border rounded-md ${withdrawalAmountError ? 'border-red-500' : 'border-gray-300'}`} value={withdrawalAmount} onChange={(e) => onWithdrawalAmountChange(Number(e.target.value))} min="1" step="1000"/>{withdrawalAmountError && <p className="mt-2 text-sm text-red-600">{withdrawalAmountError}</p>}</div></div>)}</div><button onClick={onCalculate} disabled={isInvalid} className="w-full bg-brand-accent text-white font-bold py-3 px-4 rounded-lg hover:bg-pink-600 disabled:bg-gray-400">Calculate Maturity Value</button></div></div>);
+      };
+
+      // --- Main App Component (from App.tsx) ---
+      const AppTaxBenefitInfo = () => (<div className="bg-teal-50 border border-teal-200 text-teal-800 p-4 rounded-lg shadow-sm flex items-start space-x-4 mb-8"><svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 flex-shrink-0 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg><div><h3 className="font-bold text-lg">Triple Tax Benefit (EEE Status)</h3><p className="text-sm">SSY investments offer an Exempt-Exempt-Exempt status under Section 80C of the Income Tax Act.</p><ul className="list-disc list-inside text-sm mt-2 space-y-1"><li><strong>Contribution Exempt:</strong> Up to ₹1.5 lakh/year is tax-deductible.</li><li><strong>Interest Earned Exempt:</strong> The accumulated interest is tax-free.</li><li><strong>Maturity Amount Exempt:</strong> The final amount is also tax-free.</li></ul></div></div>);
+      const App = () => {
+        const [monthlyInvestment, setMonthlyInvestment] = React.useState(4000); const [girlAge, setGirlAge] = React.useState(1); const [results, setResults] = React.useState(null); const [investmentError, setInvestmentError] = React.useState(null); const [ageError, setAgeError] = React.useState(null); const [isWithdrawalEnabled, setIsWithdrawalEnabled] = React.useState(false); const [withdrawalAge, setWithdrawalAge] = React.useState(18); const [withdrawalAmount, setWithdrawalAmount] = React.useState(100000); const [withdrawalAgeError, setWithdrawalAgeError] = React.useState(null); const [withdrawalAmountError, setWithdrawalAmountError] = React.useState(null);
+        const handleCalculate = React.useCallback(() => {
+          const yearlyInvestment = monthlyInvestment * 12; if (yearlyInvestment < MIN_INVESTMENT || yearlyInvestment > MAX_INVESTMENT || girlAge < MIN_GIRL_AGE || girlAge > MAX_GIRL_AGE) return; setWithdrawalAmountError(null);
+          let openingBalance = 0, totalInvestment = 0, totalWithdrawal = 0; const yearlyData = [];
+          if (isWithdrawalEnabled) {
+            let balanceAtWithdrawalStart = 0; const withdrawalYear = withdrawalAge - girlAge;
+            for (let i = 1; i < withdrawalYear; i++) { const investment = i <= DEPOSIT_PERIOD_YEARS ? yearlyInvestment : 0; balanceAtWithdrawalStart += investment + ((balanceAtWithdrawalStart + investment) * INTEREST_RATE); }
+            if (withdrawalAmount > balanceAtWithdrawalStart * 0.5) { setWithdrawalAmountError(`Amount cannot exceed 50% of balance (Max: ₹${Math.floor(balanceAtWithdrawalStart * 0.5).toLocaleString('en-IN')}).`); return; }
+          }
+          for (let i = 1; i <= MATURITY_PERIOD_YEARS; i++) {
+            const currentAge = girlAge + i; const currentYearInvestment = i <= DEPOSIT_PERIOD_YEARS ? yearlyInvestment : 0; totalInvestment += currentYearInvestment;
+            const interest = (openingBalance + currentYearInvestment) * INTEREST_RATE; let closingBalance = openingBalance + currentYearInvestment + interest; let currentYearWithdrawal = 0;
+            if (isWithdrawalEnabled && currentAge === withdrawalAge) { currentYearWithdrawal = withdrawalAmount; closingBalance -= currentYearWithdrawal; totalWithdrawal += currentYearWithdrawal; }
+            yearlyData.push({ year: i, age: currentAge, monthlyInvestment: i <= DEPOSIT_PERIOD_YEARS ? monthlyInvestment : 0, investment: currentYearInvestment, interest, closingBalance, totalInvestment, withdrawal: currentYearWithdrawal });
+            openingBalance = closingBalance;
+          }
+          setResults({ yearlyData, totalInvestment, totalInterest: openingBalance + totalWithdrawal - totalInvestment, maturityValue: openingBalance, totalWithdrawal });
+        }, [monthlyInvestment, girlAge, isWithdrawalEnabled, withdrawalAge, withdrawalAmount]);
+        const handleMonthlyInvestmentChange = (v) => { setMonthlyInvestment(v); const y = v*12; if(y < MIN_INVESTMENT) setInvestmentError(`Yearly total must be ≥ ₹${MIN_INVESTMENT}`); else if(y > MAX_INVESTMENT) setInvestmentError(`Yearly total must be ≤ ₹${MAX_INVESTMENT}`); else setInvestmentError(null); };
+        const handleAgeChange = (v) => { setGirlAge(v); if(v < MIN_GIRL_AGE) setAgeError(`Age must be ≥ ${MIN_GIRL_AGE}`); else if(v > MAX_GIRL_AGE) setAgeError(`Age must be ≤ ${MAX_GIRL_AGE}`); else setAgeError(null); };
+        const handleWithdrawalAgeChange = (v) => { setWithdrawalAge(v); if(v < 18 || v >= MATURITY_PERIOD_YEARS) setWithdrawalAgeError(`Age must be 18-${MATURITY_PERIOD_YEARS-1}`); else setWithdrawalAgeError(null);};
+        const handleWithdrawalAmountChange = (v) => { setWithdrawalAmount(v); if(v <= 0) setWithdrawalAmountError('Amount must be positive'); else setWithdrawalAmountError(null);};
+        return (<div className="min-h-screen text-gray-800 p-4 sm:p-6 md:p-8"><div className="max-w-7xl mx-auto"><header className="text-center mb-8"><h1 className="text-4xl sm:text-5xl font-extrabold text-brand-dark mb-2">Sukanya Samriddhi Yojana (SSY) Calculator</h1><p className="text-lg text-gray-600 max-w-3xl mx-auto">Plan for your daughter's future. Estimate the maturity amount from the SSY scheme, with an option to include partial withdrawal.</p></header><AppTaxBenefitInfo /><main className="grid grid-cols-1 lg:grid-cols-3 gap-8"><div className="lg:col-span-1"><CalculatorForm monthlyInvestment={monthlyInvestment} onMonthlyInvestmentChange={handleMonthlyInvestmentChange} girlAge={girlAge} onAgeChange={handleAgeChange} onCalculate={handleCalculate} investmentError={investmentError} ageError={ageError} isWithdrawalEnabled={isWithdrawalEnabled} onIsWithdrawalEnabledChange={setIsWithdrawalEnabled} withdrawalAge={withdrawalAge} onWithdrawalAgeChange={handleWithdrawalAgeChange} withdrawalAmount={withdrawalAmount} onWithdrawalAmountChange={handleWithdrawalAmountChange} withdrawalAgeError={withdrawalAgeError} withdrawalAmountError={withdrawalAmountError}/></div><div className="lg:col-span-2"><ResultsDisplay results={results} /></div></main><footer className="text-center mt-12 py-6 border-t border-gray-200"><p className="text-sm text-gray-500"><strong>Disclaimer:</strong> This calculator is for illustrative purposes only. The projected values are based on the current interest rate of 8.2% and are subject to change. Please consult a financial advisor for personalized advice.</p></footer></div></div>);
+      };
+
+      // --- Renders the App to the DOM ---
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+
+    </script>
+</body>
+</html>

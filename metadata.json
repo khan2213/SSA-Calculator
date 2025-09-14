@@ -1,0 +1,5 @@
+{
+  "name": "Sukanya Samriddhi Yojana (SSY) Calculator",
+  "description": "A comprehensive calculator to estimate the maturity amount and interest earned from the Sukanya Samriddhi Yojana (SSY) government savings scheme for a girl child. Users can adjust the annual investment, the child's age, and see a detailed year-by-year breakdown of their investment growth.",
+  "requestFramePermissions": []
+}
