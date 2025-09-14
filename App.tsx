@@ -175,6 +175,19 @@ const App: React.FC = () => {
       }
   };
 
+  const handleReset = useCallback(() => {
+    setMonthlyInvestment(4000);
+    setGirlAge(1);
+    setResults(null);
+    setInvestmentError(null);
+    setAgeError(null);
+    setIsWithdrawalEnabled(false);
+    setWithdrawalAge(18);
+    setWithdrawalAmount(100000);
+    setWithdrawalAgeError(null);
+    setWithdrawalAmountError(null);
+  }, []);
+
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans p-4 sm:p-6 md:p-8">
@@ -209,7 +222,7 @@ const App: React.FC = () => {
             />
           </div>
           <div className="lg:col-span-2">
-            <ResultsDisplay results={results} />
+            <ResultsDisplay results={results} onReset={handleReset} />
           </div>
         </main>
         
